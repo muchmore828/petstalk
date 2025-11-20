@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵物溝通與書信預約</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --primary-color: #D87829; /* 暖橘棕色 */
+            --bg-color: #FFF8F0;
+            --warning-bg: #FFF3CD;
+            --warning-text: #856404;
+            --tab-inactive: #e0e0e0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px 20px 0 20px;
+            color: #594a42;
+        }
+        .container {
+            background: white;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 0 0 20px 20px; /* 底部圓角，頂部留給 Tab */
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
+            border-top: 8px solid var(--primary-color);
+        }
+        /* Tab Navigation 樣式 */
+        .tab-nav {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            background-color: var(--tab-inactive);
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .tab-button {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: #594a42;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            background-color: white;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        /* 內容區塊通用樣式 */
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        p.desc {
+            font-size: 0.9rem;
+            color: #8c7b75;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; box-sizing: border-box; transition: all 0.3s; background-color: #fff; }
+        input:focus, textarea:focus { border-color: var(--primary-color); background-color: #fffbf7; outline: none; }
+        .question-label { color: var(--primary-color); }
+        .photo-guide { background-color: var(--warning-bg); color: var(--warning-text); padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px; }
+        .photo-guide h3 { margin-top: 0; font-size: 1.1rem; }
+        .photo-guide ul { padding-left: 20px; margin-bottom: 10px; font-size: 0.95rem; }
+        .checkbox-wrapper { display: flex; align-items: center; margin-top: 10px; font-weight: bold; cursor: pointer; }
+        .checkbox-wrapper input { width: 20px; height: 20px; margin-right: 10px; accent-color: var(--primary-color); }
+        button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(216, 120, 41, 0.3); transition: transform 0.2s; }
+        button:hover { transform: translateY(-2px); }
+        .tab-content { display: none; } /* 預設隱藏內容區塊 */
+
+        /* 離世溝通的特殊樣式 */
+        .afterlife-note {
+            background-color: #f7f3ff;
+            border-left: 5px solid #6c5ce7; /* 換一個柔和的紫色 */
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #4b3e8e;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab-nav">
+        <div class="tab-button active" id="btn-petComm">🐾 寵物溝通</div>
+        <div class="tab-button" id="btn-afterlife">🌈 離世書信</div>
+    </div>
+    <div class="container">
+        <div id="petComm" class="tab-content" style="display: block;">
+            <h1>🐾 寵物說說話預約資訊</h1>
+            <p class="desc">請填寫毛小孩的資訊與您想問的問題</p>
+
+            <form id="petCommForm">
+                <div class="form-group"><label for="pc_petName">毛小孩的名字 <span style="color:red">*</span></label><input type="text" id="pc_petName" placeholder="例如：饅頭" required></div>
+                <div class="form-group"><label for="pc_petSpecies">毛小孩的種類 <span style="color:red">*</span></label><input type="text" id="pc_petSpecies" placeholder="例如：波斯貓、拉布拉多、倉鼠" required></div>
+                <div class="form-group"><label for="pc_petAge">毛小孩的年齡 <span style="color:red">*</span></label><input type="text" id="pc_petAge" placeholder="例如：3歲、5個月" required></div>
+                <div class="form-group"><label for="pc_ownerTitle">您的稱謂 <span style="color:red">*</span></label><input type="text" id="pc_ownerTitle" placeholder="例如：媽媽、姐姐、主人" required></div>
+                <hr style="border: 0; border-top: 1px dashed #ddd; margin: 25px 0;">
+                <div class="form-group"><label for="pc_q1" class="question-label">問題一 <span style="color:red">*</span></label><input type="text" id="pc_q1" placeholder="請輸入想問的第一個問題" required></div>
+                <div class="form-group"><label for="pc_q2" class="question-label">問題二</label><input type="text" id="pc_q2" placeholder="請輸入想問的第二個問題 (選填)"></div>
+                <div class="form-group"><label for="pc_q3" class="question-label">問題三</label><input type="text" id="pc_q3" placeholder="請輸入想問的第三個問題 (選填)"></div>
+                <div class="form-group"><label for="pc_note">備註說明</label><textarea id="pc_note" rows="3" placeholder="還有什麼需要補充的嗎？"></textarea></div>
+
+                <div class="photo-guide">
+                    <h3>📷 照片準備提醒</h3>
+                    <p>請準備 <strong>6 張</strong> 半年內的照片，送出表單後請在聊天室傳送。</p>
+                    <ul>
+                        <li><strong>明顯的瞳孔照片</strong> (眼睛要清楚、不要有濾鏡)</li>
+                        <li><strong>至少兩張背脊或尾巴照片</strong></li>
+                    </ul>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="pc_photo_check" required> 我已準備好照片，稍後發送</label>
+                </div>
+                <button type="submit" id="pc_submitBtn">送出寵物溝通預約單 💌</button>
+            </form>
+        </div>
+
+        <div id="afterlifeComm" class="tab-content">
+            <h1>🌈 離世溝通書信</h1>
+            <p class="desc">請填寫毛小孩的資料與您想傳達給祂的訊息</p>
+
+            <form id="afterlifeForm">
+                <div class="afterlife-note">
+                    請注意，離世書信服務僅提供給離世三週以上的毛小孩。
+                </div>
+
+                <div class="form-group"><label for="ac_petName">毛小孩的名字 <span style="color:red">*</span></label><input type="text" id="ac_petName" placeholder="例如：饅頭" required></div>
+                <div class="form-group"><label for="ac_petSpecies">毛小孩的種類 <span style="color:red">*</span></label><input type="text" id="ac_petSpecies" placeholder="例如：波斯貓、拉布拉多、倉鼠" required></div>
+                <div class="form-group"><label for="ac_petAge">毛小孩的年齡 <span style="color:red">*</span></label><input type="text" id="ac_petAge" placeholder="例如：享年 12 歲" required></div>
+                
+                <div class="form-group">
+                    <label for="ac_datePassed">離世日期/時間 <span style="color:red">*</span></label>
+                    <input type="text" id="ac_datePassed" placeholder="例如：2025/11/01 或 大約半年前" required>
+                </div>
+
+                <div class="form-group"><label for="ac_ownerTitle">您的稱謂 <span style="color:red">*</span></label><input type="text" id="ac_ownerTitle" placeholder="例如：媽媽、姐姐、主人" required></div>
+                <hr style="border: 0; border-top: 1px dashed #ddd; margin: 25px 0;">
+                
+                <div class="form-group"><label for="ac_q1" class="question-label">傳達訊息一 <span style="color:red">*</span></label><input type="text" id="ac_q1" placeholder="您最想問或想告訴祂的第一句話" required></div>
+                <div class="form-group"><label for="ac_q2" class="question-label">傳達訊息二</label><input type="text" id="ac_q2" placeholder="您想問或想告訴祂的第二句話 (選填)"></div>
+                <div class="form-group"><label for="ac_q3" class="question-label">傳達訊息三</label><input type="text" id="ac_q3" placeholder="您想問或想告訴祂的第三句話 (選填)"></div>
+                <div class="form-group"><label for="ac_note">備註說明</label><textarea id="ac_note" rows="3" placeholder="還有什麼需要補充的嗎？"></textarea></div>
+
+                <div class="photo-guide">
+                    <h3>📷 照片準備提醒 (離世前)</h3>
+                    <p>請準備 <strong>6 張</strong> 毛小孩的清晰照片，稍後在聊天室傳送。</p>
+                    <ul>
+                        <li><strong>明顯的瞳孔照片</strong> (眼睛要清楚、不要有濾鏡)</li>
+                        <li><strong>至少兩張背脊或尾巴照片</strong></li>
+			<li><strong>如果有任何他喜歡的玩具、零食，或者生前想吃卻不能吃的食物，也請準備照片</strong></li>
+                    </ul>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="ac_photo_check" required> 我已準備好照片，稍後發送</label>
+                </div>
+
+                <button type="submit" id="ac_submitBtn">送出離世書信預約單 💌</button>
+            </form>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // ★★★ 部署時填入你的 LIFF ID ★★★
+        const YOUR_LIFF_ID = "請在此填入你的LIFF_ID"; 
+
+        // ====== Tab 切換邏輯 ======
+        function switchTab(tabId) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            // 移除所有按鈕的 active 狀態
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // 顯示目標內容並啟用按鈕
+            document.getElementById(tabId).style.display = 'block';
+            document.getElementById('btn-' + tabId.replace('Comm', '')).classList.add('active');
+        }
+
+        document.getElementById('btn-petComm').addEventListener('click', () => switchTab('petComm'));
+        document.getElementById('btn-afterlife').addEventListener('click', () => switchTab('afterlifeComm'));
+
+
+        // ====== LIFF 初始化 ======
+        document.addEventListener('DOMContentLoaded', function() {
+            liff.init({ liffId: YOUR_LIFF_ID })
+                .catch((err) => { console.log("LIFF 初始化等待中..."); });
+        });
+
+        // ====== 寵物溝通表單送出 (Tab 1) ======
+        document.getElementById('petCommForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const prefix = 'pc_';
+            const petName = document.getElementById(prefix + 'petName').value;
+            const petSpecies = document.getElementById(prefix + 'petSpecies').value;
+            const petAge = document.getElementById(prefix + 'petAge').value;
+            const ownerTitle = document.getElementById(prefix + 'ownerTitle').value;
+            const q1 = document.getElementById(prefix + 'q1').value;
+            const q2 = document.getElementById(prefix + 'q2').value || "（無）";
+            const q3 = document.getElementById(prefix + 'q3').value || "（無）";
+            const note = document.getElementById(prefix + 'note').value || "（無）";
+
+            const messageText = `【🐾 寵物說說話預約】\n\n🐶 毛孩：${petName} (${petSpecies}, ${petAge})\n👤 家長：${ownerTitle}\n\n❓ 問題一：${q1}\n❓ 問題二：${q2}\n❓ 問題三：${q3}\n\n📝 備註：${note}\n\n------------------\n📸 狀態：家長已準備好 6 張照片（含瞳孔/背脊），稍後發送。`;
+            
+            sendLiffMessage(messageText);
+        });
+
+        // ====== 離世溝通表單送出 (Tab 2) ======
+        document.getElementById('afterlifeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const prefix = 'ac_';
+            const petName = document.getElementById(prefix + 'petName').value;
+            const petSpecies = document.getElementById(prefix + 'petSpecies').value;
+            const petAge = document.getElementById(prefix + 'petAge').value;
+            const datePassed = document.getElementById(prefix + 'datePassed').value; // 離世日期
+            const ownerTitle = document.getElementById(prefix + 'ownerTitle').value;
+            const q1 = document.getElementById(prefix + 'q1').value;
+            const q2 = document.getElementById(prefix + 'q2').value || "（無）";
+            const q3 = document.getElementById(prefix + 'q3').value || "（無）";
+            const note = document.getElementById(prefix + 'note').value || "（無）";
+
+            const messageText = `【🌈 離世溝通書信】\n\n🕊️ 名字：${petName} (${petSpecies}, ${petAge})\n🗓️ 離世：${datePassed}\n👤 家長：${ownerTitle}\n\n💌 訊息一：${q1}\n💌 訊息二：${q2}\n💌 訊息三：${q3}\n\n📝 備註：${note}\n\n------------------\n📸 狀態：家長已準備好 6 張生前照片，稍後發送。`;
+            
+            sendLiffMessage(messageText);
+        });
+
+        // ====== 統一訊息發送函數 ======
+        function sendLiffMessage(message) {
+            if (liff.isInClient()) {
+                liff.sendMessages([{
+                    type: 'text',
+                    text: message
+                }]).then(() => {
+                    liff.closeWindow();
+                }).catch((err) => {
+                    window.alert('訊息發送失敗：' + err);
+                });
+            } else {
+                window.alert('✅ 測試成功！LINE 會顯示的訊息：\n\n' + message);
+            }
+        }
+    </script>
+</body>
+</html>
